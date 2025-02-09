@@ -1,21 +1,31 @@
-/* styles/Sidebar.module.css */
+/* Use a modern sans-serif font; ensure it's imported in your global CSS or _document.tsx/_app.tsx */
 .sidebar {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  width: 150px;
-  z-index: 4;
-  background: #f4f4f4;
-  padding: 10px;
-  border-radius: 4px;
+  padding: 16px;
+  font-family: "Roboto", sans-serif;
+  color: #333;
+  background: transparent; /* Remove background from aside */
+}
+
+.sidebar h3 {
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .dndnode {
-  padding: 8px;
-  margin-bottom: 5px;
-  background: #fff;
+  padding: 8px 12px;
+  margin-bottom: 8px;
   border: 1px solid #ddd;
-  border-radius: 2px;
+  border-radius: 4px;
   cursor: grab;
-  text-align: center;
+  background: none; /* Remove button background */
+  transition: background 0.3s ease, transform 0.2s ease;
+  font-family: "Roboto", sans-serif;
+  font-size: 1rem;
+  color: #333;
+}
+
+.dndnode:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
 }

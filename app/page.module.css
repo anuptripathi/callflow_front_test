@@ -1,0 +1,32 @@
+/* app/page.module.css */
+.dndflow {
+  display: flex;
+  height: 100vh;
+}
+
+/* Left column for Sidebar */
+.leftColumn {
+  width: 200px;
+  background-color: #f4f4f4;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+/* Right column for top bar and main canvas */
+.rightColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar containing the query input and button */
+.topBar {
+  background-color: #f0f0f0;
+  padding: 10px;
+}
+
+/* Main canvas area */
+.reactflowWrapper {
+  flex: 1;
+  height: 100%;
+}

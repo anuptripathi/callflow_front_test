@@ -1,0 +1,21 @@
+/* styles/Sidebar.module.css */
+.sidebar {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 150px;
+  z-index: 4;
+  background: #f4f4f4;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.dndnode {
+  padding: 8px;
+  margin-bottom: 5px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  cursor: grab;
+  text-align: center;
+}

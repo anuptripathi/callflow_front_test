@@ -1,101 +1,148 @@
-import Image from "next/image";
+// app/page.tsx
+"use client";
+
+import React, { useState, DragEvent } from "react";
+import dynamic from "next/dynamic";
+import {
+  ReactFlowProvider,
+  addEdge,
+  Connection,
+  Edge,
+  useNodesState,
+  useEdgesState,
+  Node,
+} from "reactflow";
+import Sidebar from "./components/Sidebar";
+import NodeConfigPanel from "./components/NodeConfigPanel";
+import styles from "./page.module.css";
+import "reactflow/dist/style.css";
+
+// Dynamically import ReactFlow (disable SSR)
+const ReactFlow = dynamic(
+  () => import("reactflow").then((mod) => mod.ReactFlow),
+  { ssr: false }
+);
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  // Manage nodes and edges separately
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([]);
+  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [query, setQuery] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const onConnect = (params: Connection | Edge) =>
+    setEdges((eds) => addEdge({ ...params, animated: true }, eds));
+
+  const onNodeClick = (_: React.MouseEvent, node: Node) => {
+    if (node.data && node.data.verb) {
+      setSelectedNode(node);
+    }
+  };
+
+  const onDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+    const type = event.dataTransfer.getData("application/reactflow");
+    if (!type) return;
+
+    const position = {
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    };
+
+    const newNode: Node = {
+      id: String(new Date().getTime()),
+      position,
+      data: { label: type.toUpperCase(), verb: type, params: {} },
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+  };
+
+  const onDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  };
+
+  // When the user submits a query, call the API to generate a flow
+  const handleGenerateFlow = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await fetch("/api/generate-flow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      // Update the canvas with the returned flow
+      setNodes(data.nodes);
+      setEdges(data.edges);
+    } catch (error) {
+      console.error("Error generating flow:", error);
+    }
+    setIsGenerating(false);
+  };
+
+  return (
+    <div className={styles.dndflow}>
+      {/* Left Column: Sidebar */}
+      <div className={styles.leftColumn}>
+        <Sidebar />
+      </div>
+
+      {/* Right Column: Top Bar and Flow Canvas */}
+      <div className={styles.rightColumn}>
+        {/* Top Bar with query input */}
+        <div className={styles.topBar}>
+          <input
+            type="text"
+            placeholder="Describe your desired call flow..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            style={{ width: "60%", padding: "8px", marginRight: "8px" }}
+          />
+          <button onClick={handleGenerateFlow} disabled={isGenerating}>
+            {isGenerating ? "Generating..." : "Generate Flow"}
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {/* Main Canvas */}
+        <div
+          className={styles.reactflowWrapper}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onLoad={(reactFlowInstance) =>
+              console.log("Flow loaded:", reactFlowInstance)
+            }
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        </div>
+
+        {selectedNode && (
+          <NodeConfigPanel
+            node={selectedNode}
+            onSave={(updatedData: any) => {
+              setNodes((nds) =>
+                nds.map((node) =>
+                  node.id === selectedNode.id
+                    ? { ...node, data: { ...node.data, ...updatedData } }
+                    : node
+                )
+              );
+              setSelectedNode(null);
+            }}
+            onClose={() => setSelectedNode(null)}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        )}
+      </div>
     </div>
   );
 }

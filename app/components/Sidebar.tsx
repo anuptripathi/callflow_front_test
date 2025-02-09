@@ -32,7 +32,7 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside className={styles.sidebar}>
-      <h3>Available Verbs</h3>
+      <h3>Available Actions</h3>
       {verbs.map((v) => (
         <div
           key={v.verb}

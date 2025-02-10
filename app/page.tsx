@@ -33,6 +33,7 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [query, setQuery] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const onConnect = (params: Connection | Edge) =>
     setEdges((eds) => addEdge({ ...params, animated: true }, eds));
@@ -82,6 +83,24 @@ export default function Home() {
       console.error("Error generating flow:", error);
     }
     setIsGenerating(false);
+  };
+
+  // When the user clicks "Save Flow", send the current nodes and edges to our API.
+  const handleSaveFlow = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/save-flow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nodes, edges }),
+      });
+      const result = await res.json();
+      console.log("Flow saved:", result);
+      // Optionally show a success message
+    } catch (error) {
+      console.error("Error saving flow:", error);
+    }
+    setIsSaving(false);
   };
 
   return (
@@ -135,6 +154,16 @@ export default function Home() {
               sx={{ maxWidth: "200px" }}
             >
               {isGenerating ? "Generating..." : "Generate Flow"}
+            </Button>
+
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={handleSaveFlow}
+              disabled={isSaving}
+              sx={{ maxWidth: "100px" }}
+            >
+              {isSaving ? "Saving..." : "Save Flow"}
             </Button>
           </Paper>
 
